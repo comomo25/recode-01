@@ -3,19 +3,29 @@ import WelcomeModal from './components/modals/WelcomeModal';
 import PostCreateModal from './components/modals/PostCreateModal';
 import PostDetailModal from './components/modals/PostDetailModal';
 import PostEditModal from './components/modals/PostEditModal';
+import TrailCreateModal from './components/modals/TrailCreateModal';
+import TrailDetailModal from './components/modals/TrailDetailModal';
 import FloatingButton from './components/ui/FloatingButton';
+import BottomTabBar from './components/ui/BottomTabBar';
+import GalleryView from './components/gallery/GalleryView';
 import { useUserStore } from './stores/userStore';
 import { useModalStore } from './stores/modalStore';
+import { useTabStore } from './stores/tabStore';
 import { useGeolocation } from './hooks/useGeolocation';
 import { usePosts } from './hooks/usePosts';
+import { useTrails } from './hooks/useTrails';
 import { generateUserId } from './utils/uuid';
 import { createPost, deletePost, updatePost, getAllPosts } from './services/postService';
+import { createTrail, deleteTrail } from './services/trailService';
+import { TrailInput } from './types';
 
 function App() {
   const { user, setUser } = useUserStore();
-  const { currentModal, selectedPost, openModal, closeModal } = useModalStore();
+  const { currentModal, selectedPost, selectedTrail, openModal, closeModal } = useModalStore();
+  const { activeTab } = useTabStore();
   const { location, error, loading, refetch } = useGeolocation();
   const { posts, refetch: refetchPosts } = usePosts();
+  const { trails, refetch: refetchTrails } = useTrails();
 
   // 初回訪問時のみWelcomeModalを表示
   const showWelcomeModal = !user;
@@ -35,9 +45,13 @@ function App() {
   const handlePostCreate = async (postInput: import('./types').PostInput) => {
     if (!user) return;
 
-    await createPost(user.userId, user.nickname, postInput);
+    // Trail詳細画面から呼ばれた場合、trailIdを付与
+    const { selectedTrail } = useModalStore.getState();
+    const input = selectedTrail
+      ? { ...postInput, trailId: selectedTrail.trailId }
+      : postInput;
 
-    // 投稿一覧を再取得
+    await createPost(user.userId, user.nickname, input);
     await refetchPosts();
   };
 
@@ -47,9 +61,7 @@ function App() {
 
     try {
       await deletePost(selectedPost.postId);
-      // 投稿一覧を再取得
       await refetchPosts();
-      // モーダルを閉じる
       closeModal();
     } catch (error) {
       console.error('Failed to delete post:', error);
@@ -58,7 +70,6 @@ function App() {
   };
 
   const handlePostEdit = () => {
-    // 編集モーダルを開く
     openModal('postEdit');
   };
 
@@ -68,17 +79,13 @@ function App() {
 
     try {
       await updatePost(selectedPost.postId, { textMemo });
-      // 投稿一覧を再取得
       await refetchPosts();
-      // Firestoreから最新の投稿一覧を取得して、更新された投稿を探す
       const latestPosts = await getAllPosts();
       const updatedPost = latestPosts.find(p => p.postId === selectedPost.postId);
 
-      // 詳細モーダルに戻る（更新された投稿データを使用）
       if (updatedPost) {
         openModal('postDetail', updatedPost);
       } else {
-        // 見つからない場合はモーダルを閉じる
         closeModal();
       }
     } catch (error) {
@@ -87,38 +94,84 @@ function App() {
     }
   };
 
+  // Trail作成
+  const handleTrailCreate = async (trailInput: TrailInput) => {
+    if (!user) return;
+
+    await createTrail(user.userId, user.nickname, trailInput);
+    await refetchTrails();
+  };
+
+  // Trail削除
+  const handleTrailDelete = async () => {
+    const { selectedTrail } = useModalStore.getState();
+    if (!selectedTrail) return;
+
+    try {
+      await deleteTrail(selectedTrail.trailId);
+      await refetchTrails();
+      closeModal();
+    } catch (error) {
+      console.error('Failed to delete trail:', error);
+      alert('軌跡の削除に失敗しました');
+    }
+  };
+
+  // Trail内にPostを追加
+  const handleAddPostToTrail = () => {
+    openModal('postCreate');
+  };
+
   return (
     <div className="relative w-full h-screen">
-      {/* 地図 */}
-      <div className="w-full h-full">
-        {loading ? (
-          <div className="w-full h-full flex items-center justify-center bg-gray-100">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">位置情報を取得中...</p>
-            </div>
-          </div>
-        ) : error ? (
-          <div className="w-full h-full flex items-center justify-center bg-gray-100">
-            <div className="text-center max-w-md px-4">
-              <div className="text-red-600 text-5xl mb-4">⚠️</div>
-              <h2 className="text-xl font-bold text-gray-800 mb-2">
-                位置情報エラー
-              </h2>
-              <p className="text-gray-600 mb-4">{error}</p>
-              <p className="text-sm text-gray-500">
-                ブラウザの設定で位置情報の使用を許可してください
-              </p>
-            </div>
-          </div>
-        ) : (
-          <Map
-            center={location}
-            posts={posts}
-            onPostClick={(post) => openModal('postDetail', post)}
+      {/* メインコンテンツ */}
+      <div className="w-full h-full pb-14">
+        {activeTab === 'map' && (
+          <>
+            {loading ? (
+              <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">位置情報を取得中...</p>
+                </div>
+              </div>
+            ) : error ? (
+              <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                <div className="text-center max-w-md px-4">
+                  <div className="text-red-600 text-5xl mb-4">⚠️</div>
+                  <h2 className="text-xl font-bold text-gray-800 mb-2">
+                    位置情報エラー
+                  </h2>
+                  <p className="text-gray-600 mb-4">{error}</p>
+                  <p className="text-sm text-gray-500">
+                    ブラウザの設定で位置情報の使用を許可してください
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <Map
+                center={location}
+                posts={posts}
+                trails={trails}
+                onPostClick={(post) => openModal('postDetail', post)}
+                onTrailClick={(trail) => openModal('trailDetail', { trail })}
+              />
+            )}
+          </>
+        )}
+
+        {activeTab === 'gallery' && (
+          <GalleryView
+            trails={trails}
+            loading={false}
+            onTrailClick={(trail) => openModal('trailDetail', { trail })}
+            onCreateTrail={() => openModal('trailCreate')}
           />
         )}
       </div>
+
+      {/* タブバー */}
+      <BottomTabBar />
 
       {/* 初回登録モーダル */}
       {showWelcomeModal && (
@@ -153,8 +206,26 @@ function App() {
         />
       )}
 
+      {/* Trail作成モーダル */}
+      {currentModal === 'trailCreate' && (
+        <TrailCreateModal
+          onClose={closeModal}
+          onSubmit={handleTrailCreate}
+        />
+      )}
+
+      {/* Trail詳細モーダル */}
+      {currentModal === 'trailDetail' && selectedTrail && (
+        <TrailDetailModal
+          trail={selectedTrail}
+          onClose={closeModal}
+          onDelete={handleTrailDelete}
+          onAddPost={handleAddPostToTrail}
+        />
+      )}
+
       {/* ローディング表示（地図の上に重ねる） */}
-      {loading && !showWelcomeModal && (
+      {loading && !showWelcomeModal && activeTab === 'map' && (
         <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -163,8 +234,8 @@ function App() {
         </div>
       )}
 
-      {/* 現在地ボタン（地図が表示されている時のみ） */}
-      {!loading && !error && location && (
+      {/* 現在地ボタン（地図タブで地図が表示されている時のみ） */}
+      {activeTab === 'map' && !loading && !error && location && (
         <FloatingButton
           onClick={handleLocationRefresh}
           position="bottom-left"
@@ -193,8 +264,8 @@ function App() {
         />
       )}
 
-      {/* 投稿作成ボタン（地図が表示されている時のみ） */}
-      {!loading && !error && location && user && (
+      {/* 投稿作成ボタン（地図タブで地図が表示されている時のみ） */}
+      {activeTab === 'map' && !loading && !error && location && user && (
         <FloatingButton
           onClick={() => openModal('postCreate')}
           position="bottom-right"
@@ -218,11 +289,35 @@ function App() {
         />
       )}
 
-      {/* メニューボタン（地図が表示されている時のみ） */}
-      {!loading && !error && location && user && (
+      {/* ギャラリータブの軌跡作成ボタン */}
+      {activeTab === 'gallery' && user && (
+        <FloatingButton
+          onClick={() => openModal('trailCreate')}
+          position="bottom-right"
+          ariaLabel="新しい軌跡を作成"
+          variant="primary"
+          icon={
+            <svg
+              className="w-6 h-6 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+          }
+        />
+      )}
+
+      {/* メニューボタン（地図タブで表示） */}
+      {activeTab === 'map' && !loading && !error && location && user && (
         <FloatingButton
           onClick={() => {
-            // TODO: Phase 3では何もしない。Phase 4で設定モーダルを開く
             console.log('メニューボタンがクリックされました');
           }}
           position="top-right"

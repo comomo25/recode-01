@@ -7,6 +7,7 @@ import {
   getDocs,
   query,
   orderBy,
+  where,
   Timestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
@@ -38,7 +39,7 @@ export const createPost = async (
       audioUrl = await uploadAudio(postInput.audioFile, postId);
     }
 
-    const postData = {
+    const postData: Record<string, unknown> = {
       postId,
       userId,
       nickname,
@@ -51,6 +52,11 @@ export const createPost = async (
       createdAt: now,
       updatedAt: now,
     };
+
+    // trailIdが指定されている場合は追加
+    if (postInput.trailId) {
+      postData.trailId = postInput.trailId;
+    }
 
     await addDoc(collection(db, POSTS_COLLECTION), postData);
     return postId;
@@ -82,6 +88,7 @@ export const getAllPosts = async (): Promise<Post[]> => {
         textMemo: data.textMemo || undefined,
         audioUrl: data.audioUrl || undefined,
         audioDuration: data.audioDuration || undefined,
+        trailId: data.trailId || undefined,
         createdAt: data.createdAt.toDate(),
         updatedAt: data.updatedAt.toDate(),
       };
@@ -142,5 +149,41 @@ export const deletePost = async (postId: string): Promise<void> => {
   } catch (error) {
     console.error('Error deleting post:', error);
     throw new Error('投稿の削除に失敗しました');
+  }
+};
+
+// 特定TrailのPostを取得
+export const getPostsByTrailId = async (trailId: string): Promise<Post[]> => {
+  try {
+    const q = query(
+      collection(db, POSTS_COLLECTION),
+      where('trailId', '==', trailId),
+      orderBy('createdAt', 'asc')
+    );
+
+    const querySnapshot = await getDocs(q);
+
+    const posts: Post[] = querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        postId: data.postId,
+        userId: data.userId,
+        nickname: data.nickname,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        photoUrl: data.photoUrl || undefined,
+        textMemo: data.textMemo || undefined,
+        audioUrl: data.audioUrl || undefined,
+        audioDuration: data.audioDuration || undefined,
+        trailId: data.trailId || undefined,
+        createdAt: data.createdAt.toDate(),
+        updatedAt: data.updatedAt.toDate(),
+      };
+    });
+
+    return posts;
+  } catch (error) {
+    console.error('Error getting posts by trailId:', error);
+    throw new Error('Trail内の投稿取得に失敗しました');
   }
 };

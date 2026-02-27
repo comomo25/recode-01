@@ -57,6 +57,23 @@ export const deleteFile = async (url: string): Promise<void> => {
   }
 };
 
+// Trail用カバー写真をアップロード
+export const uploadTrailCoverPhoto = async (
+  file: File,
+  trailId: string
+): Promise<string> => {
+  try {
+    const compressedFile = await compressImage(file);
+    const storageRef = ref(storage, `trails/${trailId}/cover.jpg`);
+    await uploadBytes(storageRef, compressedFile);
+    const downloadURL = await getDownloadURL(storageRef);
+    return downloadURL;
+  } catch (error) {
+    console.error('Error uploading trail cover photo:', error);
+    throw new Error('カバー写真のアップロードに失敗しました');
+  }
+};
+
 // 画像を圧縮
 export const compressImage = async (file: File): Promise<File> => {
   try {

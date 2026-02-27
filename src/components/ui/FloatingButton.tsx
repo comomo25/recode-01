@@ -16,8 +16,8 @@ const FloatingButton = ({
   const positionClasses = {
     'top-left': 'top-4 left-4',
     'top-right': 'top-4 right-4',
-    'bottom-left': 'bottom-4 left-4',
-    'bottom-right': 'bottom-4 right-4',
+    'bottom-left': 'bottom-20 left-4',
+    'bottom-right': 'bottom-20 right-4',
   };
 
   const variantClasses = {

@@ -7,3 +7,7 @@ export const generateUserId = (): string => {
 export const generatePostId = (): string => {
   return uuidv4();
 };
+
+export const generateTrailId = (): string => {
+  return uuidv4();
+};

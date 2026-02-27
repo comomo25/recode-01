@@ -1,12 +1,14 @@
 import { useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import { LatLngExpression } from 'leaflet';
-import { Geolocation, Post } from '../types';
+import { Geolocation, Post, Trail } from '../types';
 
 interface MapProps {
   center: Geolocation | null;
   posts: Post[];
+  trails?: Trail[];
   onPostClick: (post: Post) => void;
+  onTrailClick?: (trail: Trail) => void;
   onMapReady?: () => void;
 }
 
@@ -19,7 +21,7 @@ function ChangeMapView({ center }: { center: LatLngExpression }) {
   return null;
 }
 
-const Map = ({ center, posts, onPostClick, onMapReady }: MapProps) => {
+const Map = ({ center, posts, trails = [], onPostClick, onTrailClick, onMapReady }: MapProps) => {
   const mapRef = useRef<boolean>(false);
 
   // デフォルト位置（東京駅）
@@ -47,6 +49,18 @@ const Map = ({ center, posts, onPostClick, onMapReady }: MapProps) => {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       {center && <ChangeMapView center={mapCenter} />}
+
+      {/* 軌跡のポリラインを表示 */}
+      {trails.map((trail) => (
+        <Polyline
+          key={trail.trailId}
+          positions={trail.coordinates.map((p) => [p.latitude, p.longitude] as LatLngExpression)}
+          pathOptions={{ color: '#3B82F6', weight: 4, opacity: 0.7 }}
+          eventHandlers={{
+            click: () => onTrailClick?.(trail),
+          }}
+        />
+      ))}
 
       {/* 投稿のピンを表示 */}
       {posts.map((post) => (
