@@ -1,26 +1,28 @@
-import { Trail } from '../../types';
+import { Post, Trail } from '../../types';
+import PostCard from './PostCard';
 import TrailCard from './TrailCard';
 
 interface GalleryViewProps {
+  posts: Post[];
   trails: Trail[];
   loading: boolean;
+  onPostClick: (post: Post) => void;
   onTrailClick: (trail: Trail) => void;
-  onCreateTrail: () => void;
 }
 
-const GalleryView = ({ trails, loading, onTrailClick, onCreateTrail }: GalleryViewProps) => {
+const GalleryView = ({ posts, trails, loading, onPostClick, onTrailClick }: GalleryViewProps) => {
   if (loading) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">軌跡を読み込み中...</p>
+          <p className="text-gray-600">読み込み中...</p>
         </div>
       </div>
     );
   }
 
-  if (trails.length === 0) {
+  if (posts.length === 0 && trails.length === 0) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-50 px-8">
         <div className="text-center">
@@ -34,21 +36,21 @@ const GalleryView = ({ trails, loading, onTrailClick, onCreateTrail }: GalleryVi
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={1.5}
-              d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+              d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
             />
           </svg>
           <h2 className="text-lg font-bold text-gray-700 mb-2">
-            まだ軌跡がありません
+            まだ記録がありません
           </h2>
           <p className="text-gray-500 text-sm mb-4">
-            散歩の軌跡をアップロードして、あなたの冒険を記録しましょう
+            街歩きの記録を投稿してみましょう
           </p>
-          <button
-            onClick={onCreateTrail}
-            className="bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition-colors"
-          >
-            軌跡を追加する
-          </button>
         </div>
       </div>
     );
@@ -58,13 +60,31 @@ const GalleryView = ({ trails, loading, onTrailClick, onCreateTrail }: GalleryVi
     <div className="w-full h-full bg-gray-50 overflow-y-auto pb-20">
       <div className="px-4 pt-4 pb-2">
         <h1 className="text-xl font-bold text-gray-800">ギャラリー</h1>
-        <p className="text-sm text-gray-500 mt-1">みんなの散歩軌跡</p>
+        <p className="text-sm text-gray-500 mt-1">みんなの記録</p>
       </div>
-      <div className="px-4 space-y-4 pb-4">
-        {trails.map((trail) => (
-          <TrailCard key={trail.trailId} trail={trail} onClick={onTrailClick} />
-        ))}
-      </div>
+
+      {/* 投稿一覧 */}
+      {posts.length > 0 && (
+        <div className="px-4 space-y-4 pb-4">
+          {posts.map((post) => (
+            <PostCard key={post.postId} post={post} onClick={onPostClick} />
+          ))}
+        </div>
+      )}
+
+      {/* Trail一覧 */}
+      {trails.length > 0 && (
+        <>
+          <div className="px-4 pt-2 pb-2">
+            <h2 className="text-base font-bold text-gray-700">散歩軌跡</h2>
+          </div>
+          <div className="px-4 space-y-4 pb-4">
+            {trails.map((trail) => (
+              <TrailCard key={trail.trailId} trail={trail} onClick={onTrailClick} />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 };

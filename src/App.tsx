@@ -162,10 +162,11 @@ function App() {
 
         {activeTab === 'gallery' && (
           <GalleryView
+            posts={posts}
             trails={trails}
             loading={false}
+            onPostClick={(post) => openModal('postDetail', post)}
             onTrailClick={(trail) => openModal('trailDetail', { trail })}
-            onCreateTrail={() => openModal('trailCreate')}
           />
         )}
       </div>
