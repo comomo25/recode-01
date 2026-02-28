@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import { LatLngExpression } from 'leaflet';
 import { Geolocation, Post, Trail } from '../types';
+import { postIcon } from '../utils/mapIcons';
 
 interface MapProps {
   center: Geolocation | null;
@@ -67,6 +68,7 @@ const Map = ({ center, posts, trails = [], onPostClick, onTrailClick, onMapReady
         <Marker
           key={post.postId}
           position={[post.latitude, post.longitude]}
+          icon={postIcon}
           eventHandlers={{
             click: () => onPostClick(post),
           }}

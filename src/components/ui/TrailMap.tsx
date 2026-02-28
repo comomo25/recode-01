@@ -1,6 +1,7 @@
 import { MapContainer, TileLayer, Polyline, Marker, Popup } from 'react-leaflet';
 import { LatLngExpression, LatLngBounds } from 'leaflet';
 import { TrailPoint, Post } from '../../types';
+import { postIcon } from '../../utils/mapIcons';
 
 interface TrailMapProps {
   coordinates: TrailPoint[];
@@ -47,6 +48,7 @@ const TrailMap = ({ coordinates, posts = [], onPostClick, className = 'h-64' }: 
         <Marker
           key={post.postId}
           position={[post.latitude, post.longitude]}
+          icon={postIcon}
           eventHandlers={{
             click: () => onPostClick?.(post),
           }}
