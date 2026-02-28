@@ -236,7 +236,7 @@ const PostCreateModal = ({
           <button
             type="submit"
             onClick={handleSubmit}
-            disabled={isSubmitting || !textMemo.trim() || !currentLocation}
+            disabled={isSubmitting || (!textMemo.trim() && !photoFile && !audioFile) || !currentLocation}
             className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isSubmitting ? '投稿中...' : '投稿'}
