@@ -65,7 +65,7 @@ const GalleryView = ({ posts, trails, loading, onPostClick, onTrailClick }: Gall
 
       {/* 投稿一覧 */}
       {posts.length > 0 && (
-        <div className="px-4 space-y-4 pb-4">
+        <div className="px-4 grid grid-cols-2 gap-3 pb-4">
           {posts.map((post) => (
             <PostCard key={post.postId} post={post} onClick={onPostClick} />
           ))}

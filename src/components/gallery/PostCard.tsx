@@ -13,7 +13,7 @@ const PostCard = ({ post, onClick }: PostCardProps) => {
       className="w-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden text-left hover:shadow-md transition-shadow"
     >
       {/* 写真 */}
-      <div className="w-full h-48 bg-gray-200 relative">
+      <div className="w-full h-32 bg-gray-200 relative">
         {post.photoUrl ? (
           <img
             src={post.photoUrl}
